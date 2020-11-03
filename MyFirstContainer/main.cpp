@@ -9,6 +9,8 @@ int main()
 	vec.begin();
 	v.push_back(1);
 	v.push_back(2);
-	v.print();
+	std::cout << v.at(0);
+	std::cout << v.at(1);
+	//v.print();
 }
 
