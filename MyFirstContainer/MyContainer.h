@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <algorithm>
+#include <typeinfo>
 
 template <typename T> class MyFirstContainerClass
 {
@@ -8,6 +9,9 @@ private:
 	T* m_buffer;
 	std::size_t m_capacity;
 	std::size_t m_length;
+	bool m_loop = { false };
+	bool m_wall = { false };
+	T m_wallIndex;
 
 	struct Deleter
 	{
@@ -23,6 +27,22 @@ public:
 		: m_capacity(capacity), m_length(0),
 		m_buffer (static_cast<T*>(::operator new(sizeof(T)*capacity)))
 	{}
+	MyFirstContainerClass(int capacity, bool wall, bool loop)
+		:MyFirstContainerClass(10), m_wall(wall), m_loop(loop) 
+	{
+		if (m_wall == true) m_loop = false;
+	}
+
+	void setLoop() {
+		m_loop = true; m_wall = false;
+	}
+	void setWall(T const& value) {
+		m_loop = false; m_wall = true;
+		m_wallIndex = value;
+	}
+	void setWallIndex(T const& value) { m_wallIndex = value; }
+	int getWallIndex() { return m_wallIndex; }
+
 	~MyFirstContainerClass()
 	{
 		std::unique_ptr<T, Deleter> deleter(m_buffer, Deleter());
@@ -56,8 +76,6 @@ public:
 	{
 		move.swap(*this);
 	}
-
-
 	MyFirstContainerClass& operator=(MyFirstContainerClass&& move) noexcept
 	{
 		move.swap(*this);
@@ -87,10 +105,37 @@ public:
 			reserveCapacity(capacityUpperBound);
 		}
 	}
-	T at(int index)
+	T at(const int index)
 	{
-		if (index < m_length)
-			return m_buffer[index];
+		//std::cout << index << "\n";
+		if (m_wall)
+		{
+			if (index < 0 || index > m_length - 1) return m_wallIndex;
+		}
+		else if (m_loop)
+		{
+			if (index < 0)
+			{
+				int correctIndex = m_length + index;
+				return m_buffer[correctIndex];
+			}
+			if (index == m_length) return m_buffer[0];
+			if (index > m_length)
+			{
+				int correctIndex = index - m_length;
+				return m_buffer[correctIndex];
+			}
+		}
+		return m_buffer[index];
+
+	}
+	T& operator[] (const std::size_t index)
+	{
+		return m_buffer[index];
+	}
+	std::size_t size()
+	{
+		return m_length;
 	}
 private:
 	void resizeIfRequire()
